@@ -1,0 +1,4 @@
+# pnpm workspace config — 放行 node-pty（原生）/ esbuild 的构建脚本。
+allowBuilds:
+  esbuild: true
+  node-pty: true

@@ -1,0 +1,7 @@
+# dsh-workspace-terminal bundle patch: add the terminal widget plugin.
+# 依赖 workspace 服务：把「终端」widget 注册进 dsh-workspace-sidebar 工作台（center 区域）。
+# 防双挂载守卫：聚合 bundle 若已用其它 id 挂载本包则自动退让。
+- insert:
+    - id: dsh-workspace-terminal
+      name: 'dsh-workspace-terminal'
+      disabled: !!js "[...ctx.loader.entries()].some((e) => e.options.name === 'dsh-workspace-terminal' && e.options.id !== 'dsh-workspace-terminal' && !e.disabled)"

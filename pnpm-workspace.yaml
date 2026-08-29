@@ -1,0 +1,10 @@
+# dsh-workspace-market — pnpm workspace 根配置。
+# `packages:` 列出所有子插件目录（唯一事实来源，scripts/install.mjs 据此枚举）。
+# 新增插件：拷入目录 + 在此登记一行即可。
+packages:
+  - dsh-workspace-terminal
+
+# 放行子插件依赖的原生 / 构建脚本（node-pty 原生构建、esbuild 平台二进制）。
+allowBuilds:
+  esbuild: true
+  node-pty: true

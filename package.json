@@ -1,0 +1,13 @@
+{
+  "name": "dsh-workspace-market",
+  "version": "0.1.0",
+  "private": true,
+  "description": "dsh-workspace-sidebar 插件族 monorepo：主仓库 + 子插件目录（各子插件独立 package.json + lib/）。",
+  "scripts": {
+    "build": "pnpm -r run build",
+    "typecheck": "pnpm -r run typecheck",
+    "install:plugins": "node scripts/install.mjs",
+    "list:plugins": "node scripts/install.mjs --list"
+  },
+  "packageManager": "pnpm@11.24.0"
+}
