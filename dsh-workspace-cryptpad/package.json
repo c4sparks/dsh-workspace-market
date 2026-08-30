@@ -1,0 +1,49 @@
+{
+  "name": "dsh-workspace-cryptpad",
+  "version": "0.1.0",
+  "description": "dsh-workspace-sidebar widget 插件：CryptPad tab（host 起 CryptPad node 服务 + iframe 内嵌文档编辑，设置经 /settings 路由持久化）。",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "cordis": {
+    "name": "dsh-workspace-cryptpad",
+    "version": "0.1.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": []
+    }
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs && node scripts/copy-fixes.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "packageManager": "pnpm@11.24.0",
+  "peerDependencies": {
+    "react": "^19"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "cryptpad": "git+https://gitcode.com/gh_mirrors/cr/cryptpad.git#2026.5.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.0",
+    "@types/react": "^19.2.18",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2"
+  }
+}

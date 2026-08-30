@@ -1,0 +1,12 @@
+node_modules/
+lib/
+*.log
+*.tsbuildinfo
+.codegraph/
+.claude
+
+runtime/
+tmp/
+
+# 本地 vendor 依赖
+vendor/download/

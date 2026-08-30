@@ -1,0 +1,24 @@
+# dsh-workspace-cryptpad 独立 workspace（不并入 market 根 workspace）。
+# cryptpad 是 git 源依赖、还带两个 github 传递依赖，overrides 只对本插件生效，
+# 放这里避免污染市场根（pnpm 11 的 overrides 只从本文件读取）。
+# 安装：cd dsh-workspace-cryptpad && pnpm install
+packages:
+  - '.'
+
+# cryptpad 传递依赖里有 git 源包（json.sortify = CryptPad 官方自维护的 github 包），
+# pnpm 11 的 blockExoticSubdeps 默认拦截 → 显式允许。
+blockExoticSubdeps: false
+
+# 覆盖 cryptpad 的 github 传递依赖，绕开 github 直连不稳定：
+#  - drawio（github:cryptpad/drawio-npm，npm 无发布）→ 本地占位 vendor/drawio-stub（仅 package.json）。
+#    真实 drawio 由 scripts/ensure-drawio.mjs 首启从镜像下载到 www/components/drawio（版本 pin + 可选 sha256），
+#    不再需要 169MB 手工 vendor 副本（旧 vendor/download/drawio-npm 已不再被引用，可删除）。
+#  - json.sortify（github:cryptpad/JSON.sortify，npm 无发布）→ registry 版本 2.2.2（走 npmmirror）。
+#    注意：pnpm 11 不再读 package.json 的 "pnpm" 字段，overrides 必须写在这里（pnpm-workspace.yaml）。
+overrides:
+  drawio: 'file:./vendor/drawio-stub'
+  json.sortify: '2.2.2'
+
+# esbuild 需要跑 postinstall 以完成二进制分发（pnpm 11 supply-chain 策略默认拦截）。
+allowBuilds:
+  esbuild: true

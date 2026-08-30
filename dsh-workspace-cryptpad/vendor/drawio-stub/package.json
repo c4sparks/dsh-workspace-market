@@ -1,0 +1,6 @@
+{
+  "name": "drawio",
+  "version": "0.0.0-stub",
+  "private": true,
+  "description": "pnpm 占位包：真实 drawio 由 scripts/ensure-drawio.mjs 首次打开时从镜像下载到 www/components/drawio（见 docs/drawio-vendor.md）"
+}
