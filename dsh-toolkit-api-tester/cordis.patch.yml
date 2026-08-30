@@ -1,0 +1,8 @@
+# dsh-toolkit-api-tester bundle patch: add the api tester widget plugin.
+# 依赖 workspace 服务：把「接口管理」widget 注册进 dsh-workspace-sidebar 工作台（right 区域）。
+# host 半注册 /_dsh/desktop/toolkit/{proxy,api-tester} 路由（与旧的 toolkit-sidecar 互斥，须先移除它）。
+# 防双挂载守卫：聚合 bundle 若已用其它 id 挂载本包则自动退让。
+- insert:
+    - id: dsh-toolkit-api-tester
+      name: 'dsh-toolkit-api-tester'
+      disabled: !!js "[...ctx.loader.entries()].some((e) => e.options.name === 'dsh-toolkit-api-tester' && e.options.id !== 'dsh-toolkit-api-tester' && !e.disabled)"

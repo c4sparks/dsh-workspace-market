@@ -1,0 +1,50 @@
+{
+  "name": "dsh-toolkit-api-tester",
+  "version": "0.1.0",
+  "description": "dsh-workspace-sidebar widget 插件：接口管理 tab（HTTP 调试 + host 代理 + SQLite 收藏/历史持久化）。",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "cordis": {
+    "name": "dsh-toolkit-api-tester",
+    "version": "0.1.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": []
+    }
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "packageManager": "pnpm@11.24.0",
+  "peerDependencies": {
+    "react": "^19"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^22.20.0",
+    "@types/react": "^19.2.18",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2"
+  }
+}

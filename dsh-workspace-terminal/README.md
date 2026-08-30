@@ -6,6 +6,15 @@
 > 本插件是 [dsh-workspace-market](../README.md) monorepo 的一个子插件（工作台面板）；
 > 仓库结构 / 整体安装 / 新增插件见外层 README。
 
+## 两种使用方式
+
+| 方式 | 前提 | 入口 |
+|---|---|---|
+| **工作台 tab**（推荐） | 装了 dsh-workspace-sidebar | 工作台 TabBar「+」→ 选「终端」（center 区域，可多开/分屏/停靠） |
+| **独立侧车** | 没装 workspace-sidebar | 侧边栏底部「🖥️ 终端」按钮 → 帧级覆盖层 |
+
+插件用 `ctx.get('workspace')` 自动检测宿主并切换，无需配置；`/ws/terminal` 路由两种模式共享。
+
 ## 功能
 
 - **真终端**：node-pty 在宿主 spawn 真实 shell（`$SHELL` / `powershell.exe`），不是模拟器。
@@ -16,13 +25,13 @@
   每个实例用独立 `tab=<instanceId>` 连宿主 → 各自独立的 shell / pty，互不干扰。
 - **声明式设置**：主题（浅色白底默认 / 深色）、字号（10–24）；设置页「工作台」分区直接调。
 - **双主题完整 ANSI 调色板**：深浅各配一套 16 色板 + 光标 / 选区色，白底下输入也不糊。
-- **健壮降级**：node-pty 缺失时显示降级提示；未装 dsh-workspace-sidebar 时跳过注册并告警。
+- **健壮降级**：node-pty 缺失时显示降级提示；**未装 dsh-workspace-sidebar 时自动回退为侧边栏底部侧车入口**（点击打开帧级覆盖层，同一 xterm 终端）。
 
 ## 安装前提
 
-本插件是**工作台面板**，依赖 dsh-workspace-sidebar 提供的工作台框架（`inject: ['workspace']`
-+ `registerWidget`）。**必须先安装 dsh-workspace-sidebar**，否则插件跳过注册、控制台告警，
-看不到任何效果（宿主 + 面板缺一不可）。
+本插件是**工作台面板**，优先依赖 dsh-workspace-sidebar 的工作台框架（`registerWidget`）。
+**未装宿主时自动回退为侧边栏底部侧车入口**（见「无宿主降级」），终端照常可用
+（host `/ws/terminal` 路由独立于宿主）。
 
 ## 安装 / 卸载
 
@@ -30,12 +39,12 @@
 # 安装（在 dsh-workspace-market 根目录，见外层 README）
 node scripts/install.mjs dsh-workspace-terminal
 # 或手动
-dsh plugin --profile web add <本插件目录>
+dsh plugin --profile <web|desktop> add <本插件目录>
 
 # 卸载
 node scripts/install.mjs --remove dsh-workspace-terminal
 # 或手动
-dsh plugin --profile web remove dsh-workspace-terminal
+dsh plugin --profile <web|desktop> remove dsh-workspace-terminal
 ```
 
 > 若 `node-pty` 原生构建被 pnpm 拦截：在 profile 的 `pnpm-workspace.yaml` 放行
@@ -54,6 +63,12 @@ dsh 设置页「工作台」分区 → 「终端」设置块：
 
 - **主题**：浅色（白底，默认）/ 深色；未设置时跟随 dsh 全局主题（浅 / 深 / 跟随系统）。
 - **字号**：10–24。
+
+## 无宿主降级
+
+未安装 `dsh-workspace-sidebar` 时，插件用 `ctx.get('workspace')` 检测宿主：无 → 自动在侧边栏底部
+注册「🖥️ 终端」侧车按钮，点击打开帧级覆盖层渲染同一 xterm 终端（host `/ws/terminal` 路由独立于宿主）。
+运行期周期性重查宿主可用性，workspace 出现后自动切换为工作台 tab（HMR/热重载安全）。
 
 ## 工作方式
 

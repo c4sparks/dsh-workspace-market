@@ -8,7 +8,8 @@
     "skipLibCheck": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "types": []
+    "types": ["node"],
+    "allowImportingTsExtensions": true
   },
   "include": ["src"]
 }

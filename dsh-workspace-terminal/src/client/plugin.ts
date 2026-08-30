@@ -1,23 +1,35 @@
 // @ts-nocheck — React 为运行时注入种子模块；类型宽松
 /**
- * dsh-workspace-terminal — 插件主体：注册「终端」widget tab，经 /ws/terminal 连宿主 pty。
+ * dsh-workspace-terminal — 插件主体：
+ * 有 workspace 服务 → 注册「终端」widget tab（经 /ws/terminal 连宿主 pty）；
+ * 无 → 回退注册为侧边栏底部侧车入口 + 帧级覆盖层。
+ *
+ * 调解逻辑（含 HMR/热重载轮询）与侧车组件为 market/shared/ 模板的本地副本
+ * （React 以 deps 注入传给 createSidecar，兼容本插件 iife 构建）。
  */
 import { TerminalWidget } from './terminal.tsx'
+import { createSidecar } from './sidecar.ts'
+import { createWorkspaceOrSidecarReconciler } from './reconcile.ts'
 
 const WIDGET_ID = 'dsh-workspace-terminal:term'
+const APP_ID = 'dsh-workspace-terminal'
+
+/** 拼 /ws/terminal 的 ws URL（sessionId 固定 default，tab 区分实例）。 */
+function wsUrl(tab: string): string {
+  return (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host
+    + '/ws/terminal?sessionId=default&tab=' + encodeURIComponent(tab) + '&cols=80&rows=24'
+}
 
 export function createPlugin(deps: { React: any }) {
   const React = deps.React
-  const inject = ['workspace']
+  const inject = ['slots']
 
   function apply(ctx: any) {
-    // 未提供 workspace 服务（dsh-workspace-sidebar 未安装）→ 跳过注册，避免直接抛错
-    if (!ctx.workspace) {
-      console.warn('[dsh-workspace-terminal] 未找到 workspace 服务（需先安装 dsh-workspace-sidebar），插件已跳过注册')
-      return
-    }
-    ctx.effect(() => {
-      return ctx.workspace.registerWidget({
+    const sidecar = createSidecar(React)
+    createWorkspaceOrSidecarReconciler({
+      ctx,
+      label: 'dsh-workspace-terminal: reconcile',
+      registerWidget: (workspace) => workspace.registerWidget({
         id: WIDGET_ID,
         title: '终端',
         // Lucide「terminal」图标（内嵌 SVG 路径，随主题 currentColor）
@@ -53,7 +65,6 @@ export function createPlugin(deps: { React: any }) {
           // 跟随 dsh 主题（浅色/深色/跟随系统）：
           //  - 设置里显式选「浅色/深色」→ 优先用它；
           //  - 未设置（默认）→ 用 dsh 的 colorScheme（system 已由宿主解析成 light/dark）。
-          // 订阅主题变化 → 切换时重渲染 xterm 换色（pty 不变，会话保留）。
           const [dshScheme, setDshScheme] = React.useState<string | undefined>(() => props.ctx?.theme?.getTheme?.()?.active?.colorScheme)
           React.useEffect(() => {
             const off = props.ctx?.theme?.onThemeChange?.((snap: any) => { setDshScheme(snap?.active?.colorScheme) })
@@ -62,14 +73,23 @@ export function createPlugin(deps: { React: any }) {
           const theme = settings.theme === 'dark' ? 'dark'
             : settings.theme === 'light' ? 'light'
             : (dshScheme === 'dark' ? 'dark' : 'light')
-          // 每个实例用独立 tab=<instanceId>：host 按 sessionId:tab 隔离 pty → 多开互不干扰
           const tab = props.instanceId ?? 'term'
-          const wsUrl = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host
-            + '/ws/terminal?sessionId=default&tab=' + encodeURIComponent(tab) + '&cols=80&rows=24'
-          return React.createElement(TerminalWidget, { React, theme, fontSize, wsUrl, active: props.active })
+          return React.createElement(TerminalWidget, { React, theme, fontSize, wsUrl: wsUrl(tab), active: props.active })
         },
-      })
-    }, 'dsh-workspace-terminal: widget')
+      }),
+      registerSidecar: () => {
+        sidecar.injectSidecarFooterCss()
+        return ctx.slots.inject('sidebar.footer.action', () =>
+          ctx.slots.register(
+            { name: 'sidebar.footer.action', id: APP_ID, order: 100 },
+            sidecar.createSidecarEntry({
+              id: APP_ID, icon: '🖥️', label: '终端',
+              loadPage: () => Promise.resolve(() =>
+                React.createElement(TerminalWidget, { React, theme: 'light', fontSize: 14, wsUrl: wsUrl('term'), active: true })),
+            }),
+          ))
+      },
+    })
   }
 
   return { apply, inject }
