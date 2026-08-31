@@ -1,0 +1,9 @@
+# dsh-toolkit-api-tester 独立 workspace。
+packages:
+  - '.'
+
+# better-sqlite3（原生编译）/ esbuild（devDependency，二进制分发）需要构建脚本
+# （pnpm 11 supply-chain 策略默认拦截，不放行则安装后运行崩）。
+allowBuilds:
+  esbuild: true
+  better-sqlite3: true
