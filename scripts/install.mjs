@@ -15,7 +15,9 @@
  *   node scripts/install.mjs --dry-run           # 只打印命令，不真正执行
  *   node scripts/install.mjs --help
  *
- * 子插件枚举来源：根 pnpm-workspace.yaml 的 `packages:`（唯一事实来源）。
+ * 子插件枚举来源：根 pnpm-workspace.yaml 的 `packages:`（唯一事实来源），
+ * 另补扫自带 pnpm-workspace.yaml 的独立 workspace 插件（如 cryptpad，git 源依赖不入根，
+ * 用 `dsh plugin add <目录>` 以 link 方式装入 profile，勿先 pnpm pack 再 add tarball）。
  */
 import { readFile, readdir, stat } from "node:fs/promises";
 import { existsSync } from "node:fs";
@@ -104,12 +106,25 @@ async function expandGlob(pattern, base) {
   return out;
 }
 
-/** 读取 pnpm-workspace.yaml，返回子插件列表（仅带 dsh/cordis 字段的包）。 */
+/** 返回子插件列表（仅带 dsh/cordis 字段的包）：根 workspace 成员 + 独立 workspace 插件。 */
 async function listPlugins() {
   const yaml = await readFile(join(root, "pnpm-workspace.yaml"), "utf8");
   const globs = parsePackages(yaml);
-  const dirs = [];
-  for (const g of globs) dirs.push(...await expandGlob(g, root));
+  const dirs = new Set();
+  for (const g of globs) {
+    for (const d of await expandGlob(g, root)) dirs.add(d);
+  }
+
+  // cryptpad 等独立 workspace（自带 pnpm-workspace.yaml，git 源依赖/overrides 不并入根，
+  // 否则根 install 会因 exotic subdep 报错）不在根 packages: 里，但 install.mjs 仍要能安装它们。
+  for (const entry of await readdir(root)) {
+    const dir = join(root, entry);
+    if (dirs.has(dir)) continue;
+    let isDir;
+    try { isDir = (await stat(dir)).isDirectory(); } catch { continue; }
+    if (!isDir) continue;
+    if (existsSync(join(dir, "pnpm-workspace.yaml"))) dirs.add(dir);
+  }
 
   const plugins = [];
   for (const dir of dirs) {
@@ -133,9 +148,11 @@ async function listPlugins() {
 function runDsh(args, dryRun) {
   const line = ["dsh", ...args].join(" ");
   if (dryRun) { console.log("[dry-run] " + line); return; }
-  let res = spawnSync("dsh", args, { stdio: "inherit" });
+  // Windows 上 dsh 是 .cmd shim，spawnSync 直接执行会 ENOENT/EINVAL，需 shell: true。
+  const opts = { stdio: "inherit", shell: process.platform === "win32" };
+  let res = spawnSync("dsh", args, opts);
   if (res.error && res.error.code === "ENOENT") {
-    res = spawnSync("dsh.cmd", args, { stdio: "inherit" });
+    res = spawnSync("dsh.cmd", args, opts);
   }
   if (res.error) die("无法执行 dsh: " + res.error.message);
   if (res.status !== 0) process.exit(res.status ?? 1);
@@ -158,7 +175,8 @@ function printHelp() {
 
 说明：
   包装 dsh plugin --profile <p> add <dir> / remove <name>；
-  子插件清单读取根 pnpm-workspace.yaml 的 packages:。`);
+  子插件清单 = 根 pnpm-workspace.yaml 的 packages: + 自带 pnpm-workspace.yaml 的
+  独立 workspace 插件（如 cryptpad，用目录 link 安装，勿 pack 后 add tarball）。`);
 }
 
 async function main() {
@@ -172,7 +190,7 @@ async function main() {
   }
 
   if (opts.list) {
-    console.log("dsh-workspace-market 子插件（来源：根 pnpm-workspace.yaml）:");
+    console.log("dsh-workspace-market 子插件（根 workspace 成员 + 独立 workspace 插件）:");
     for (const p of plugins) {
       const badge = p.built ? "built" : "NO lib/";
       console.log(`  ${p.name.padEnd(28)} ${badge.padEnd(7)} ${p.dir}`);

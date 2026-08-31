@@ -10,3 +10,8 @@ tmp/
 
 # 本地 vendor 依赖
 vendor/download/
+
+# 自包含发布包脚本的暂存目录 + 产物
+.dist-pack/
+.dist-prod/
+*.tgz

@@ -26,7 +26,9 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs && node scripts/copy-fixes.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "install:dsh": "pnpm install && pnpm run build && dsh plugin --profile web add .",
+    "pack:full": "node scripts/pack-dist.mjs"
   },
   "packageManager": "pnpm@11.24.0",
   "peerDependencies": {

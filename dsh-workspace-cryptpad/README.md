@@ -55,17 +55,26 @@ client 用 iframe 内嵌进工作台面板；配置经 `/settings` 路由持久�
    `DRAWIO_MIRROR_BASE` / `DRAWIO_VERSION` / `DRAWIO_SHA256` 覆盖（见 `docs/drawio-vendor.md`）。
 
 ```bash
-# 在市场根安装（会拉取 cryptpad git 依赖，可能较慢）
-pnpm install
-node scripts/install.mjs dsh-workspace-cryptpad
-# 或手动
-dsh plugin --profile <web|desktop> add <本插件目录>
+# 最省事：下载源码后，在插件目录里一条命令搞定（下载依赖 → 构建 → link 装进 dsh web profile）
+cd dsh-workspace-cryptpad
+pnpm run install:dsh
+
+# 分步等价写法（明白每一步在干嘛）：
+#   pnpm install                              # 1. 下载依赖（含 cryptpad git 源，需网络）
+#   pnpm run build                            # 2. 构建 → lib/
+#   dsh plugin --profile web add <本插件目录>  # 3. link 装进 dsh（不拉 git，无需 pack）
+# 也可在市场根用：
+#   node scripts/install.mjs dsh-workspace-cryptpad
 
 # 卸载
 node scripts/install.mjs --remove dsh-workspace-cryptpad
 # 或手动
 dsh plugin --profile <web|desktop> remove dsh-workspace-cryptpad
 ```
+
+> ⚠️ 默认装进 **web** profile；要装 desktop 把脚本里的 `--profile web` 改 `--profile desktop`。
+> 日常自己用直接 link（install:dsh）即可；`pnpm run pack:full` 打**自包含
+> 发布包**（见下「构建 / 开发」）， `dsh plugin add <tarball>` 直接装，无需 git / 改 profile。
 
 ## 使用
 
@@ -86,8 +95,15 @@ dsh plugin --profile <web|desktop> remove dsh-workspace-cryptpad
 
 ```bash
 pnpm install && pnpm run build    # esbuild → lib/client.js + lib/index.js；再跑 copy-fixes 生成 lib/cryptpad-fixes
+pnpm run pack:full                # 自包含发布包：下载依赖 → 构建 → 把 cryptpad+生产依赖打进 tarball
 pnpm run typecheck
 ```
+
+> `pnpm run pack:full` 产出 `dsh-workspace-cryptpad-<version>.tgz`（约 150MB，gitignore 已排除）。
+> 它是**自包含**的：cryptpad 及其生产依赖全部内置，发布版 package.json 不含 dependencies，
+> `dsh plugin add <tarball>` 零解析安装——无需 git / 无需改 profile 的 pnpm-workspace.yaml。
+> 脚本：`scripts/pack-dist.mjs`（含 `pnpm install --prod` 只带生产依赖、去掉 pnpm 本机元数据等）。
+> 日常自己用直接 link（`pnpm run install:dsh`）即可，不需要 pack。
 
 > 宿主直接加载 `lib/`：**改 `src/` 后必须重建**。侧车/reconciler 逻辑见 `src/client/sidecar.ts` +
 > `src/client/reconcile.ts`（market/shared 模板的本地副本）。
